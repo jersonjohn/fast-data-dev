@@ -18,21 +18,25 @@ WORKDIR /
 ARG DEVARCH_USER
 ARG DEVARCH_PASS
 ARG ARCHIVE_SERVER=https://archive.landoop.com
-ARG LKD_VERSION=2.2.2
+ARG LKD_VERSION=2.6.0
 
 ############
 # Add kafka/
 ############
 
 # Add Apache Kafka (includes Connect and Zookeeper)
-ARG KAFKA_VERSION=2.2.2
+ARG KAFKA_VERSION=2.6.0
 ARG KAFKA_LVERSION="${KAFKA_VERSION}-L0"
 ARG KAFKA_URL="${ARCHIVE_SERVER}/lkd/packages/kafka/kafka-2.12-${KAFKA_LVERSION}-lkd.tar.gz"
 
-RUN wget $DEVARCH_USER $DEVARCH_PASS "$KAFKA_URL" -O /opt/kafka.tar.gz \
-    && tar --no-same-owner -xzf /opt/kafka.tar.gz -C /opt \
-    && mkdir /opt/landoop/kafka/logs && chmod 1777 /opt/landoop/kafka/logs \
-    && rm -rf /opt/kafka.tar.gz
+COPY /landoop /opt/
+
+RUN mkdir -p /opt/landoop/kafka/logs && chmod 1777 /opt/landoop/kafka/logs
+
+# RUN wget $DEVARCH_USER $DEVARCH_PASS "$KAFKA_URL" -O /opt/kafka.tar.gz \
+#    && tar --no-same-owner -xzf /opt/kafka.tar.gz -C /opt \
+#    && mkdir /opt/landoop/kafka/logs && chmod 1777 /opt/landoop/kafka/logs \
+#    && rm -rf /opt/kafka.tar.gz
 
 # Add Schema Registry and REST Proxy
 ARG REGISTRY_VERSION=5.2.3-lkd-r0
@@ -248,8 +252,8 @@ RUN mkdir -p /opt/landoop/tools/share/kafka-autocomplete \
             -O /opt/landoop/tools/share/bash-completion/completions/kafka
 
 # Enable jline for Zookeeper
-RUN TJLINE="$(find /opt/landoop/kafka -name "jline-0*.jar" | head -n1)" \
-    && if [[ -n $TJLINE ]]; then sed "s|^exec.*|export CLASSPATH=\"\$CLASSPATH:$TJLINE\"\n&|" -i /opt/landoop/kafka/bin/zookeeper-shell; fi
+#RUN TJLINE="$(find /opt/landoop/kafka -name "jline-0*.jar" | head -n1)" \
+#    && if [[ -n $TJLINE ]]; then sed "s|^exec.*|export CLASSPATH=\"\$CLASSPATH:$TJLINE\"\n&|" -i /opt/landoop/kafka/bin/zookeeper-shell; fi
 
 # Add normcat
 ARG NORMCAT_VERSION=1.1.1
@@ -422,6 +426,7 @@ RUN ln -s /var/log /var/www/logs
 
 # Add executables, settings and configuration
 ADD setup-and-run.sh /usr/local/bin/
+ADD oracle-jdbc/ojdbc8-12.2.0.1.jar /opt/landoop/connectors/third-party/kafka-connect-jdbc/
 RUN chmod +x /usr/local/bin/setup-and-run.sh \
     && ln -s /usr/local/share/landoop/etc/bashrc /root/.bashrc
 
